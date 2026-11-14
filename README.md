@@ -3,6 +3,51 @@
 ![platform](https://img.shields.io/badge/platform-Windows%20%7C%20MacOS%20%7C%20Linux-lightgrey)
 (Over 2M downloads during 5 years since launch)
 
+---
+
+## 🔧 本仓库说明（二开版本）
+
+本项目是基于 [pavlobu/deskreen](https://github.com/pavlobu/deskreen) 的二次开发版本，在保留原有屏幕/窗口共享能力的基础上，新增了以下功能与优化：
+
+### ✨ 新增功能
+
+- **虚拟显示器共享（Windows）**：无需购买 HDMI 假负载硬件，内置 Amyuni usbmmidd_v2 虚拟显示驱动，可在 Windows 上动态添加/移除虚拟屏幕，并把虚拟屏作为共享源投屏到浏览器设备（如 iPad）。
+- **系统托盘**：点击窗口右上角关闭按钮时，应用缩回右下角系统托盘而非退出；托盘菜单支持「显示主窗口」与「退出」，单击/双击托盘图标恢复主窗口。
+
+### 🛠 优化项
+
+- **移除 Pro 广告**：删除了「Get Deskreen Pro」捐赠按钮及「仅 Pro 版本支持多客户端」等升级提示，仅保留基础功能。
+- **固定连接地址**：房间号由随机生成改为固定值，设备断开重连后连接地址不再变化。
+- **修复网卡识别**：支持中文网卡名（如「以太网」「无线局域网」），正确过滤虚拟网卡（Docker / Hyper-V / VMware / VirtualBox 等），避免误识别到虚拟网段的 IP。
+
+### 使用虚拟显示器功能
+
+1. 运行应用后连接浏览器设备，在「选择共享源」界面选择「共享整个屏幕」。
+2. 点击「添加虚拟显示器」按钮（仅 Windows 显示）。
+3. 首次使用会弹出 UAC 窗口请求安装驱动，点击「是」即可（仅需一次）。
+4. 安装完成后系统会出现一块新的虚拟屏幕，刷新后即可选择它作为共享源。
+5. 在 Windows「显示设置」中可调整虚拟屏分辨率；点击「移除虚拟显示器」即可关闭虚拟屏（驱动会保留，下次可秒开）。
+
+> **注意**：虚拟显示器功能仅支持 Windows；macOS / Linux 下相关按钮不会显示。
+
+### 构建
+
+与原项目一致，额外要求：驱动资源位于 `resources/usbmmidd/usbmmidd_v2/`，打包时通过 `electron-builder.yml` 的 `extraResources` 自动随应用分发。
+
+```bash
+git clone https://github.com/chenfang34120/deskreen.git
+cd deskreen
+npm i
+cd ./src/client-viewer && npm i && cd ../..
+npm run clean && npm run build
+# 打包免安装目录（含驱动资源）
+npx electron-builder --win --dir -c.win.signAndEditExecutable=false
+```
+
+---
+
+
+
 ![Deskreen Logo](https://raw.githubusercontent.com/pavlobu/deskreen/master/resources/icon.png)
 
 ## Deskreen turns any device with a web browser into a secondary screen for your computer
