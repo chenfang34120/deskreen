@@ -56,6 +56,28 @@ export default function ChooseAppOrScreenOverlay(
 
 	const [viewSharingIds, setViewSharingIds] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const isVirtualDisplaySupported =
+		!isWaylandSession && navigator.userAgent.indexOf('Windows') !== -1;
+	const [virtualDisplayCount, setVirtualDisplayCount] = useState<number | null>(null);
+	const [isVirtualDisplayBusy, setIsVirtualDisplayBusy] = useState<boolean>(false);
+
+	const refreshVirtualDisplayStatus = useCallback(async (): Promise<void> => {
+		if (!isVirtualDisplaySupported) return;
+		try {
+			const status = await window.electron.ipcRenderer.invoke(
+				IpcEvents.VirtualDisplayGetStatus,
+			);
+			setVirtualDisplayCount(status?.activeCount ?? 0);
+		} catch (e) {
+			console.error('failed to get virtual display status', e);
+		}
+	}, [isVirtualDisplaySupported]);
+
+	useEffect(() => {
+		if (isChooseAppOrScreenOverlayOpen && isEntireScreenToShareChosen) {
+			void refreshVirtualDisplayStatus();
+		}
+	}, [isChooseAppOrScreenOverlayOpen, isEntireScreenToShareChosen, refreshVirtualDisplayStatus]);
 
 	const handleRefreshSources = useCallback(async (): Promise<string[]> => {
 		if (isWaylandSession) {
@@ -83,6 +105,23 @@ export default function ChooseAppOrScreenOverlay(
 			setIsLoading(false);
 		}
 	}, [handleRefreshSources]);
+
+	const handleToggleVirtualDisplay = useCallback(async (): Promise<void> => {
+		setIsVirtualDisplayBusy(true);
+		try {
+			const status = await window.electron.ipcRenderer.invoke(
+				virtualDisplayCount && virtualDisplayCount > 0
+					? IpcEvents.VirtualDisplayRemove
+					: IpcEvents.VirtualDisplayAdd,
+			);
+			setVirtualDisplayCount(status?.activeCount ?? 0);
+			await handleRefreshSourcesWithLoading();
+		} catch (e) {
+			console.error('failed to toggle virtual display', e);
+		} finally {
+			setIsVirtualDisplayBusy(false);
+		}
+	}, [virtualDisplayCount, handleRefreshSourcesWithLoading]);
 
 	useEffect(() => {
 		if (!isChooseAppOrScreenOverlayOpen || isWaylandSession) {
@@ -167,7 +206,7 @@ export default function ChooseAppOrScreenOverlay(
 								borderRadius: '8px',
 							}}
 						>
-							<Col xs={9}>
+							<Col xs={isVirtualDisplaySupported ? 5 : 9}>
 								{isEntireScreenToShareChosen ? (
 									<div>
 										<H3 style={{ marginBottom: '0px' }}>
@@ -182,6 +221,26 @@ export default function ChooseAppOrScreenOverlay(
 									</div>
 								)}
 							</Col>
+							{isVirtualDisplaySupported && isEntireScreenToShareChosen ? (
+								<Col xs={3}>
+									<Button
+										icon={virtualDisplayCount && virtualDisplayCount > 0 ? 'small-cross' : 'small-plus'}
+										intent={virtualDisplayCount && virtualDisplayCount > 0 ? 'danger' : 'success'}
+										onClick={handleToggleVirtualDisplay}
+										disabled={isVirtualDisplayBusy}
+										loading={isVirtualDisplayBusy}
+										style={{
+											borderRadius: '100px',
+											width: 'max-content',
+											whiteSpace: 'nowrap',
+										}}
+									>
+										{virtualDisplayCount && virtualDisplayCount > 0
+											? t('remove-virtual-display')
+											: t('add-virtual-display')}
+									</Button>
+								</Col>
+							) : null}
 							<Col xs={2}>
 								<Button
 									icon="refresh"

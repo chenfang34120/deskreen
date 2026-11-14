@@ -149,37 +149,30 @@ export function getActiveNetworkInterface(): { interfaceName: string; ipAddress:
   Object.entries(networkInterfaces).forEach(([networksKey, networks]) => {
     if (!networks) return;
     if (networksKey.startsWith("bridge")) return;
-    if (
-      !interfacesToCheck.includes(networksKey) &&
-      !interfacesStartsWithCheck.some((prefix) =>
-        networksKey.startsWith(prefix),
-      )
-    ) {
-      return;
-    }
 
     networks.forEach((network) => {
-      if (!network.internal && network.family === "IPv4") {
-        const currentResult = {
-          interfaceName: networksKey,
-          ipAddress: network.address,
-        };
-        
-        // Prioritize Wi-Fi interfaces
-        if (isWifiInterface(networksKey)) {
-          if (!wifiResult) {
-            wifiResult = currentResult;
-          }
-        } else if (!isVirtualInterface(networksKey, network.mac)){
-          // Prioritize non-virtual interfaces next
-          if (!localResult) {
-            localResult = currentResult;
-          }
-        } else {
-          // Store virtual interface as fallback
-          if (!virtualResult) {
-            virtualResult = currentResult;
-          }
+      if (network.internal || network.family !== "IPv4") return;
+      if (network.address.startsWith("169.254.") || network.address.startsWith("127.")) return;
+
+      const currentResult = {
+        interfaceName: networksKey,
+        ipAddress: network.address,
+      };
+      
+      // Prioritize Wi-Fi interfaces
+      if (isWifiInterface(networksKey)) {
+        if (!wifiResult) {
+          wifiResult = currentResult;
+        }
+      } else if (!isVirtualInterface(networksKey, network.mac)){
+        // Prioritize non-virtual interfaces next
+        if (!localResult) {
+          localResult = currentResult;
+        }
+      } else {
+        // Store virtual interface as fallback
+        if (!virtualResult) {
+          virtualResult = currentResult;
         }
       }
     });
@@ -196,37 +189,25 @@ export default function getMyLocalIpV4(): string | undefined {
   let wifiIp: string | undefined;
   let fallbackIp: string | undefined;
   
-  // First pass: collect all valid interfaces, prioritizing Wi-Fi
+  // 遍历所有非 internal、非回环的 IPv4 接口，按优先级挑选真实物理网卡，
+  // 排除 Docker/Hyper-V/VMware/VirtualBox 等虚拟网卡。
   Object.entries(networkInterfaces).forEach(([networksKey, networks]) => {
     if (!networks) return;
     if (networksKey.startsWith("bridge")) return;
-    if (
-      !interfacesToCheck.includes(networksKey) &&
-      !interfacesStartsWithCheck.some((prefix) =>
-        networksKey.startsWith(prefix),
-      )
-    ) {
-      return;
-    }
 
     networks.forEach((network) => {
-      if (!network.internal && network.family === "IPv4") {
-        // Prioritize Wi-Fi interfaces
-        if (isWifiInterface(networksKey)) {
-          if (!wifiIp) {
-            wifiIp = network.address;
-          }
-        } else if (!isVirtualInterface(networksKey, network.mac)){
-          // Prioritize non-virtual interfaces next
-          if (!localIp) {
-            localIp = network.address;
-          }
-        } else {
-          // Store virtual interface as fallback
-          if (!fallbackIp) {
-            fallbackIp = network.address;
-          }
-        }
+      if (network.internal || network.family !== "IPv4") return;
+      // 跳过链路本地/回环地址（169.254.x.x、127.x.x.x 等）
+      if (network.address.startsWith("169.254.") || network.address.startsWith("127.")) return;
+
+      if (isWifiInterface(networksKey)) {
+        if (!wifiIp) wifiIp = network.address;
+      } else if (!isVirtualInterface(networksKey, network.mac)) {
+        // 真实物理网卡优先
+        if (!localIp) localIp = network.address;
+      } else {
+        // 虚拟网卡作为最后兜底
+        if (!fallbackIp) fallbackIp = network.address;
       }
     });
   });

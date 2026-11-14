@@ -6,7 +6,7 @@ import {
 overrideGlobalConsole();
 startConsoleRateLimiting();
 
-import { app, shell, BrowserWindow, Notification } from 'electron';
+import { app, shell, BrowserWindow, Notification, Tray, Menu, nativeImage } from 'electron';
 import { join } from 'path';
 import { is, optimizer } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
@@ -116,18 +116,21 @@ export default class DeskreenApp {
 
 	latestAppVersion = '';
 
+	tray: Tray | null = null;
+
+	/** 用户是否明确要求退出（区别于点击关闭按钮缩回托盘） */
+	isQuitting = false;
+
 	initElectronAppObject(): void {
 		/**
 		 * Add event listeners...
 		 */
 		app.on('window-all-closed', () => {
-			// TODO: when app will be set to auto start on login, this will be not required,
-			// TODO: the app will run until user didn't kill it in system tray
-			// Respect the OSX convention of having the application in memory even
-			// after all windows have been closed
-			if (process.platform !== 'darwin') {
-				app.quit();
+			// 关闭窗口后应用缩回系统托盘，不退出；仅在用户从托盘菜单选择「退出」时真正退出
+			if (process.platform === 'darwin') {
+				return;
 			}
+			// 保留应用运行（由系统托盘退出）
 		});
 
 		app.whenReady().then(async () => {
@@ -154,7 +157,15 @@ export default class DeskreenApp {
 			// dock icon is clicked and there are no other windows open.
 			if (this.mainWindow === null) {
 				this.createWindow();
+			} else {
+				this.showMainWindow();
 			}
+		});
+
+		// 任何触发 app.quit() 的路径（菜单 Command+Q、托盘「退出」）都先置退出标志，
+		// 使窗口 close 事件不再拦截，从而真正退出而非缩回托盘。
+		app.on('before-quit', () => {
+			this.isQuitting = true;
 		});
 
 		app.commandLine.appendSwitch(
@@ -260,10 +271,13 @@ export default class DeskreenApp {
 
 		this.mainWindow.on('closed', () => {
 			this.mainWindow = null;
-			// TODO: when app will be set to auto start on login, this will be not required,
-			// TODO: the app will run until user didn't kill it in system tray
-			if (process.platform !== 'darwin') {
-				app.quit();
+		});
+
+		// 点击关闭按钮时缩回系统托盘，而非退出
+		this.mainWindow.on('close', (event) => {
+			if (!this.isQuitting) {
+				event.preventDefault();
+				this.mainWindow?.hide();
 			}
 		});
 
@@ -277,6 +291,63 @@ export default class DeskreenApp {
 		this.initI18n();
 
 		initIpcMainHandlers(this.mainWindow);
+
+		this.createSystemTray();
+	}
+
+	private showMainWindow(): void {
+		if (this.mainWindow === null) {
+			void this.createWindow();
+			return;
+		}
+		if (this.mainWindow.isMinimized()) {
+			this.mainWindow.restore();
+		}
+		this.mainWindow.show();
+		this.mainWindow.focus();
+	}
+
+	private createSystemTray(): void {
+		if (this.tray !== null) {
+			return;
+		}
+
+		let trayImage = nativeImage.createFromPath(icon);
+		if (trayImage.isEmpty()) {
+			// 兜底：使用 Electron 内置空图标，避免托盘图标缺失
+			trayImage = nativeImage.createEmpty();
+		}
+		// 托盘图标统一缩放为 16x16
+		trayImage = trayImage.resize({ width: 16, height: 16 });
+
+		this.tray = new Tray(trayImage);
+		this.tray.setToolTip('Deskreen CE');
+
+		const contextMenu = Menu.buildFromTemplate([
+			{
+				label: 'Deskreen CE',
+				enabled: false,
+			},
+			{ type: 'separator' },
+			{
+				label: '显示主窗口',
+				click: () => this.showMainWindow(),
+			},
+			{ type: 'separator' },
+			{
+				label: '退出',
+				click: () => {
+					this.isQuitting = true;
+					app.quit();
+				},
+			},
+		]);
+
+		this.tray.setContextMenu(contextMenu);
+
+		// 单击/双击托盘图标时显示主窗口（Windows 单击，其余平台双击）
+		this.tray.on('click', () => this.showMainWindow());
+		this.tray.on('double-click', () => this.showMainWindow());
 	}
 
 	initI18n(): void {

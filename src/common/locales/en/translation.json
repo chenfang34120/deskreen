@@ -65,6 +65,8 @@
 	"select-entire-screen-to-share": "Select Entire Screen to Share",
 	"select-app-window-to-share": "Select App Window to Share",
 	"refresh": "Refresh",
+	"add-virtual-display": "Add Virtual Display",
+	"remove-virtual-display": "Remove Virtual Display",
 	"re-initiate-connection": "Re-initiate Connection",
 	"disconnect-all-devices": "Disconnect all devices",
 	"are-you-sure-you-want-to-disconnect-all-connected-viewing-devices": "Are you sure you want to disconnect all connected viewing devices?",

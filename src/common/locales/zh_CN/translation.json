@@ -66,6 +66,8 @@
 	"select-entire-screen-to-share": "选择要共享的整个屏幕",
 	"select-app-window-to-share": "选择要共享的应用程序窗口",
 	"refresh": "刷新",
+	"add-virtual-display": "添加虚拟显示器",
+	"remove-virtual-display": "移除虚拟显示器",
 	"re-initiate-connection": "Re-initiate Connection",
 	"disconnect-all-devices": "断开所有设备的连接",
 	"are-you-sure-you-want-to-disconnect-all-connected-viewing-devices": "是否确实要断开所有连接的观看设备？",

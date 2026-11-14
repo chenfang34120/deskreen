@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import shortID from 'shortid';
 
 export default class RoomIDService {
@@ -13,19 +12,8 @@ export default class RoomIDService {
 	}
 
 	getSimpleAvailableRoomID(): Promise<string> {
-		this.nextSimpleRoomID += 1;
-		return new Promise<string>((resolve, reject) => {
-			crypto.randomBytes(3, (error, buffer) => {
-				if (error) {
-					reject(error);
-					return;
-				}
-				const decimalString = parseInt(buffer.toString('hex'), 16)
-					.toString()
-					.padStart(6, '0');
-				resolve(decimalString.substring(0, 6));
-			});
-		});
+		// 固定房间号，保证连接地址（http://IP:端口/房间号）不随设备断开而改变
+		return Promise.resolve('deskreen');
 	}
 
 	getShortIDStringOfAvailableRoom(): Promise<string> {

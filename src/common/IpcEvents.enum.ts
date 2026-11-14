@@ -33,4 +33,7 @@ export enum IpcEvents {
 	WriteTextToClipboard = 'write-text-to-clipboard',
 	CheckScreenRecordingPermission = 'check-screen-recording-permission',
 	RelaunchApp = 'relaunch-app',
+	VirtualDisplayGetStatus = 'virtual-display-get-status',
+	VirtualDisplayAdd = 'virtual-display-add',
+	VirtualDisplayRemove = 'virtual-display-remove',
 }

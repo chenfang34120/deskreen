@@ -23,6 +23,7 @@ import { store } from '../../common/deskreen-electron-store';
 import DesktopCapturerSourceType from '../../common/DesktopCapturerSourceType';
 import isLinuxWaylandSession from '../utils/isLinuxWaylandSession';
 import { checkScreenRecordingPermission } from './checkScreenRecordingPermission';
+import virtualDisplayService from '../../features/VirtualDisplayService';
 
 export const initIpcMainHandlers = (mainWindow: BrowserWindow): void => {
 	ipcMain.on('client-changed-language', async (_, newLangCode) => {
@@ -495,6 +496,22 @@ export const initIpcMainHandlers = (mainWindow: BrowserWindow): void => {
 
 	ipcMain.handle(IpcEvents.CheckScreenRecordingPermission, () => {
 		return checkScreenRecordingPermission();
+	});
+
+	ipcMain.handle(IpcEvents.VirtualDisplayGetStatus, () => {
+		return virtualDisplayService.getStatus();
+	});
+
+	ipcMain.handle(IpcEvents.VirtualDisplayAdd, async () => {
+		await virtualDisplayService.addVirtualDisplay();
+		await getDeskreenGlobal().desktopCapturerSourcesService.refreshDesktopCapturerSources();
+		return virtualDisplayService.getStatus();
+	});
+
+	ipcMain.handle(IpcEvents.VirtualDisplayRemove, async () => {
+		await virtualDisplayService.removeVirtualDisplay();
+		await getDeskreenGlobal().desktopCapturerSourcesService.refreshDesktopCapturerSources();
+		return virtualDisplayService.getStatus();
 	});
 
 	ipcMain.handle(IpcEvents.RelaunchApp, () => {

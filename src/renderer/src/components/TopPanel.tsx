@@ -155,15 +155,6 @@ export default function TopPanel({ handleReset }: Props): React.ReactElement {
 		setIsConnectedDevicesDrawerOpen(!isConnectedDevicesDrawerOpen);
 	}, [isConnectedDevicesDrawerOpen]);
 
-	const donateTooltipContent = t('get-deskreen-pro-tooltip');
-
-	const handleDonateButtonClick = React.useCallback(() => {
-		window.electron.ipcRenderer.invoke(
-			IpcEvents.OpenExternalLink,
-			'https://deskreen.com/download',
-		);
-	}, []);
-
 	const handleTutorialButtonClick = React.useCallback(() => {
 		window.electron.ipcRenderer.invoke(
 			IpcEvents.OpenExternalLink,
@@ -225,28 +216,6 @@ export default function TopPanel({ handleReset }: Props): React.ReactElement {
 		latestVersion !== '' &&
 		currentVersion !== '' &&
 		latestVersion !== currentVersion;
-
-	const renderDonateButton = (
-		<Tooltip content={donateTooltipContent} position={Position.BOTTOM}>
-			<Button
-				id="top-panel-donate-button"
-				className={classes.donateButton}
-				onClick={handleDonateButtonClick}
-			>
-				<div className={classes.donateButtonContent}>
-					<Icon
-						className={classes.donateButtonIcon}
-						icon="clean"
-						size={20}
-						color="#D4AF37"
-					/>
-					<span className={classes.donateButtonLabel}>
-						{t('get-deskreen-pro')}
-					</span>
-				</div>
-			</Button>
-		</Tooltip>
-	);
 
 	const renderConnectedDevicesListButton = (
 		<div className={classes.topPanelControlButtonMargin}>
@@ -348,7 +317,6 @@ export default function TopPanel({ handleReset }: Props): React.ReactElement {
 				<Row middle="xs" center="xs" style={{ width: '100%' }}>
 					<Col>{renderLogoWithAppName}</Col>
 				</Row>
-				<div className={classes.donateButtonRoot}>{renderDonateButton}</div>
 				<div className={classes.topPanelControlsWrapper}>
 					<div className={classes.topPanelControlButtonsRoot}>
 						{renderConnectedDevicesListButton}

@@ -12,6 +12,8 @@ files:
 extraResources:
   - from: out/client-viewer
     to: client-viewer
+  - from: resources/usbmmidd/usbmmidd_v2
+    to: usbmmidd_v2
 asarUnpack:
   - resources/**
 win:
